@@ -40,19 +40,18 @@ import numpy as np
 
 
 def testTdmsFile():
-    tdms = TdmsFile("/Volumes/RAID-0/LockheedMartin/TDMS_200120_12-40_2020-01-20 ATRQ Build 2_Slice_00001_to_00040/Slice00001.tdms")
-    print(tdms)
-    groups = tdms.groups()
+    tdms = TdmsFile("/Volumes/RAID-0/LockheedMartin/TDMS_200120_12-40_2020-01-20 ATRQ Build 2/Slice00122.tdms")
+    # tdms.as_hdf('/tmp/Slice00122.h5')
+
     properties = tdms.properties
     for property in properties:
-        print(f'PROPERTY: {property}')
+        print(f'PROPERTY: {property} = {properties[property]}')
 
-    tdms.as_hdf('/tmp/Slice00001.h5')
     objects = tdms.objects
     for obj in objects:
         print(f'OBJECT: {obj}')
     
-    print(tdms)
+    groups = tdms.groups()
     for part in groups:
         print(f'GROUP: {part}')
         # get the data from each group's channel and make a CSV
@@ -218,13 +217,10 @@ def writeFilesHDF5(destinationDictionary, tdmsFiles, sourceTDMSDirectory, numFil
     # '0_00001_op1_Pad_6_cls', '/home/maxwell/Documents/CDME/Processed Stacks test Jan 27/0_00001_op1_Pad_6_cls/0_00001_op1_Pad_6_cls.hdf5'
 
 
-    openedSoFar = 0
     numLayers = 0
     tdmsObjects = []
-    numBatches = 0
     sliceCounter = int(firstSliceNum) - 1
     # Outermost loop: controls the number of files written, total.
-    hdFile = ""
 
     while numLayers < numFiles:
 
@@ -245,17 +241,27 @@ def writeFilesHDF5(destinationDictionary, tdmsFiles, sourceTDMSDirectory, numFil
                 processTime = time.time()
                 # print("Block " + str(numBatches))
                 # print(str(tdmsObjects) + "\n")
-
-                colNames = []
-
                 # print(tdmsObjects)
                 # print(numLayers)
 
                 for tdms in tdmsObjects:
+                    properties = tdms.properties
+                    properties["Layer Start Time"] = properties["StartTime"]
+                    properties["Layer End Time"] = properties["EndTime"]
+                    del properties["StartTime"]
+                    del properties["EndTime"]
+
                     sliceCounter = sliceCounter + 1
                     groups = tdms.groups()
                     # print(tdms)
                     for part in groups:
+                        partPropertyItems = part.properties
+                        partPropertyItems["Part Start Time"] = partPropertyItems["StartTime"]
+                        partPropertyItems["Part End Time"] = partPropertyItems["EndTime"]
+                        del partPropertyItems["StartTime"]
+                        del partPropertyItems["EndTime"]
+                        partPropertyItems = part.properties.items()
+
                         # get the data from each group's channel and make a CSV
                         channels = tdms.group_channels(part)
 
@@ -313,24 +319,41 @@ def writeFilesHDF5(destinationDictionary, tdmsFiles, sourceTDMSDirectory, numFil
                         targetWD = writeFileLocation[0:lastSlashIndex]
                         os.chdir(targetWD)
 
-                        groupName = "Slice000" + str(sliceCounter)
+                        groupName = str(sliceCounter)
 
                         # now to open the target file!
 
                         with h5py.File(writeFileLocation, "a") as hdf5File:
 
                             sliceGroup = hdf5File.create_group(groupName)
+                            sliceAttributes = sliceGroup.attrs
+                            sliceAttributes.create("TDMS Group Name", np.string_(part.name))
+
+                            #print('TDMS PROPERTIES')
+                            for property in properties:
+                                #print(f'  PROPERTY: {property} = {properties[property]}')
+                                value = properties[property]
+                                if isinstance(value, np.datetime64):
+                                    value = np.string_(np.datetime_as_string(value, unit='us', timezone='UTC'))
+                                sliceAttributes.create(property, value)
+
+                            #print("  PART PROPERTIES")
+                            for prop_name, value in partPropertyItems:
+                                #print(f'    prop_name: {prop_name}   prop_value: {value}')
+                                if isinstance(value, np.datetime64):
+                                    value = np.string_(np.datetime_as_string(value, unit='us', timezone='UTC'))
+                                sliceAttributes.create(prop_name, value)
 
                             # If there aren't any rows then just skip it,
                             #  otherwise create a dataset for each trait
                             if len(areaCol > 1):
                                 try:
-                                    areaData = sliceGroup.create_dataset("areaCol", data=areaCol)
-                                    xData = sliceGroup.create_dataset("xCol", data=xCol)
-                                    yData = sliceGroup.create_dataset("yCol", data=yCol)
-                                    paramData = sliceGroup.create_dataset("paramCol", data=paramCol)
-                                    intensityCol = sliceGroup.create_dataset("intensityCol", data=intensityCol)
-                                    laserCol = sliceGroup.create_dataset("laserCol", data=laserCol)
+                                    areaData = sliceGroup.create_dataset("Area", data=areaCol)
+                                    intensityCol = sliceGroup.create_dataset("Intensity", data=intensityCol)
+                                    laserCol = sliceGroup.create_dataset("LaserTTL", data=laserCol)
+                                    paramData = sliceGroup.create_dataset("Parameter", data=paramCol)
+                                    xData = sliceGroup.create_dataset("X-Axis", data=xCol)
+                                    yData = sliceGroup.create_dataset("Y-Axis", data=yCol)
                                 except Exception as ex:
                                     template = "An exception of type {0} occurred. Arguments:\n{1!r}"
                                     message = template.format(type(ex).__name__, ex.args)

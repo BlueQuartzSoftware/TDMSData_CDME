@@ -25,7 +25,7 @@ import FileCleanup
 #import SummaryStatisticsOfParts
 
 # WritingFiles.testTdmsFile()
-
+# quit()
 
 
 # print("Example directory path: \nC:/Users/maxah/Documents/CDME/Sept 9 2019 TDMS Parts/TDMS\n")
@@ -43,7 +43,7 @@ tdmsFiles = []
 
 mode = "csv"
 
-testPath = "/home/maxwell/Documents/CDME/TestEnv"
+testPath = "/Volumes/RAID-0/LockheedMartin/TEST/"
 
 while 'y' not in yesNoChar and 'Y' not in yesNoChar:
 
