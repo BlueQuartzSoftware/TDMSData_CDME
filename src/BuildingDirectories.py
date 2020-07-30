@@ -45,11 +45,14 @@ def buildDirectories(sourceTDMSDirectory, tdmsFiles, taskName, mode="csv"):
     folderDictionary = dict()
     groups = firstObject.groups()
     for part in groups:
-        partName = str(part)
+        
+        print(f'part: {part}')
+        partName = part.name
+        print(f'partName: {part.name}')
         #TODO: find out why these files aren't getting built in the proper directories.
         newDir = newFolder / partName
         newDir.mkdir(exist_ok=True, parents=True)
-        folderDictionary[str(part)] = str(newDir)
+        folderDictionary[str(part.name)] = str(newDir)
 
 
 
@@ -66,7 +69,7 @@ def buildDirectories(sourceTDMSDirectory, tdmsFiles, taskName, mode="csv"):
             hf = h5py.File(str(partName) + ".hdf5", 'w')
             hf.close()
             os.chdir(cwd)
-            folderDictionary[str(part)] = str(destination)
+            folderDictionary[str(part.name)] = str(destination)
 
 
 

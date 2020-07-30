@@ -38,6 +38,48 @@ import h5py
 import numpy as np
 
 
+
+def testTdmsFile():
+    tdms = TdmsFile("/Volumes/RAID-0/LockheedMartin/TDMS_200120_12-40_2020-01-20 ATRQ Build 2_Slice_00001_to_00040/Slice00001.tdms")
+    print(tdms)
+    groups = tdms.groups()
+    properties = tdms.properties
+    for property in properties:
+        print(f'PROPERTY: {property}')
+
+    tdms.as_hdf('/tmp/Slice00001.h5')
+    objects = tdms.objects
+    for obj in objects:
+        print(f'OBJECT: {obj}')
+    
+    print(tdms)
+    for part in groups:
+        print(f'GROUP: {part}')
+        # get the data from each group's channel and make a CSV
+        channels = tdms.group_channels(part)
+
+        # make a 2D array, and populate it with the arrays in this loop.
+        groupCSV = []
+        areaCol = []
+        xCol = []
+        yCol = []
+        paramCol = []
+        intensityCol = []
+        laserCol = []
+        csvCount = 0
+        # copy each channel's data to its respective frame
+
+        for channel in channels:
+            print(f'  CHANNEL: {channel}')
+            names = []
+            for i in channels:
+                wordList = str(i).split("/")
+                name = wordList[-1]
+                name = name.strip(">")
+                name = name.strip("'")
+                names.append(name)
+            colNames = names
+
 def writeFilesCSV(folderDictionary, tdmsFiles, sourceTDMSDirectory, numFiles, batchSize=1, firstSliceNum=1):
 
     # print(str(sourceTDMSDirectory) + "\\" + tdmsFiles[0])
@@ -257,7 +299,7 @@ def writeFilesHDF5(destinationDictionary, tdmsFiles, sourceTDMSDirectory, numFil
                             groupCSV.append(data)
                             csvCount += 1
 
-                        writeFileLocation = destinationDictionary[str(part)]
+                        writeFileLocation = destinationDictionary[str(part.name)]
                         #except it's actually like this:
                         # '0_00001_op1_Pad_6_cls', '/home/maxwell/Documents/CDME/Processed Stacks test Jan 27/0_00001_op1_Pad_6_cls/0_00001_op1_Pad_6_cls.hdf5'
                         # so I have to get rid of the last addendum

@@ -24,6 +24,10 @@ import WritingFiles
 import FileCleanup
 #import SummaryStatisticsOfParts
 
+# WritingFiles.testTdmsFile()
+
+
+
 # print("Example directory path: \nC:/Users/maxah/Documents/CDME/Sept 9 2019 TDMS Parts/TDMS\n")
 testPath = "C:\\Users\\maxah\\Documents\\CDME\\Sept 9 2019 TDMS Parts\\TDMS"
 
