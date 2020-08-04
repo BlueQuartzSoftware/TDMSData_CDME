@@ -10,7 +10,7 @@ from typing import Any, AnyStr, Dict, Generator, List, Match, Pattern
 
 FILE_VERSION: int = 2
 VERSION_KEY: str = 'Version'
-SLICES_KEY: str = 'Slices'
+SLICES_KEY: str = 'TDMSData'
 INDEX_KEY: str = 'Index'
 LAYER_START_TIME_KEY: str = 'LayerStartTime'
 LAYER_END_TIME_KEY: str = 'LayerEndTime'
