@@ -55,7 +55,7 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = 
       with nptdms.TdmsFile(path) as tdmsFile:
         group: nptdms.TdmsGroup
         for group in tdmsFile.groups():
-          if groups and group.name not in groups:
+          if groups and not any(re.match(pattern, group.name) for pattern in groups):
             continue
           
           output_file_path = output_dir / f'{group.name}.h5'
