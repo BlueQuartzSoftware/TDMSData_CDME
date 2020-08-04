@@ -19,14 +19,13 @@ PART_END_TIME_KEY: str = 'PartEndTime'
 TDMS_GROUP_NAME_KEY: str = 'TDMS_GroupName'
 VERTICES_KEY: str = 'Vertices'
 
-def tdms2h5(input_dir: str, output_dir: str, prefix: str, groups: List[str] = [], verbose: bool = False) -> None:
-  output_dir_path = Path(output_dir)
-  if not output_dir_path.exists():
+def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = [], verbose: bool = False) -> None:
+  if not output_dir.exists():
     if verbose:
-      print(f'Creating directory \"{output_dir_path}\"')
-    output_dir_path.mkdir(parents=True)
+      print(f'Creating directory \"{output_dir}\"')
+    output_dir.mkdir(parents=True)
 
-  paths_generator: Generator[(Path, None, None)] = Path(input_dir).glob('*.[Tt][Dd][Mm][Ss]')
+  paths_generator: Generator[(Path, None, None)] = input_dir.glob('*.[Tt][Dd][Mm][Ss]')
   regex_name: Pattern[AnyStr] = re.compile(fr'{prefix}(\d+)')
 
   with ExitStack() as exitStack:
@@ -48,7 +47,7 @@ def tdms2h5(input_dir: str, output_dir: str, prefix: str, groups: List[str] = []
           if groups and group.name not in groups:
             continue
           
-          output_file_path = output_dir_path / f'{group.name}.h5'
+          output_file_path = output_dir / f'{group.name}.h5'
           if group.name not in h5_files:
             h5_files[group.name] = exitStack.enter_context(h5py.File(output_file_path, 'w'))
             h5_file = h5_files[group.name]
@@ -106,8 +105,8 @@ def tdms2h5(input_dir: str, output_dir: str, prefix: str, groups: List[str] = []
 
 def main() -> None:
   parser = argparse.ArgumentParser(description='Converts TDMS files to a HDF5 format. Input files must be named in the following regex format \"[prefix]\\d+.tdms\"')
-  parser.add_argument('input_dir', help='Input directory where .tdms files are located')
-  parser.add_argument('output_dir', help='Output directory where .h5 files are generated')
+  parser.add_argument('input_dir', type=Path, help='Input directory where .tdms files are located')
+  parser.add_argument('output_dir', type=Path, help='Output directory where .h5 files are generated')
   parser.add_argument('prefix', help='Specifies the file prefix to search for as regex.')
   parser.add_argument('-g', '--groups', nargs='+', help='Specifies which TDMS groups should be converted')
   parser.add_argument('-v', '--verbose', action='store_true', help='Prints additional information while converting')
