@@ -19,6 +19,17 @@ PART_END_TIME_KEY: str = 'PartEndTime'
 TDMS_GROUP_NAME_KEY: str = 'TDMS_GroupName'
 VERTICES_KEY: str = 'Vertices'
 
+def _write_tdms_properties(h5_group: h5py.Group, tdms_dict: Dict[str, Any], replacements: Dict[str, str]) -> None:
+  key: str
+  value: Any
+  for key, value in tdms_dict.items():
+    if key in replacements:
+      key = replacements[key]
+    if isinstance(value, np.datetime64):
+      h5_group.attrs[key] = np.string_(np.datetime_as_string(value, unit='us', timezone='UTC'))
+    else:
+      h5_group.attrs[key] = value
+
 def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = [], verbose: bool = False) -> None:
   if not output_dir.exists():
     if verbose:
@@ -57,29 +68,19 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = 
           h5_file = h5_files[group.name]
           h5_group: h5py.Group = h5_file[SLICES_KEY].create_group(str(slice_index))
 
-          key: str
-          value: Any
-          for key, value in tdmsFile.properties.items():
-            if key == 'StartTime':
-              key = LAYER_START_TIME_KEY
-            elif key == 'EndTime':
-              key = LAYER_END_TIME_KEY
-            if isinstance(value, np.datetime64):
-              h5_group.attrs[key] = np.string_(np.datetime_as_string(value, unit='us', timezone='UTC'))
-            else:
-              h5_group.attrs[key] = value
-          
-          key: str
-          value: Any
-          for key, value in group.properties.items():
-            if key == 'StartTime':
-              key = PART_START_TIME_KEY
-            elif key == 'EndTime':
-              key = PART_END_TIME_KEY
-            if isinstance(value, np.datetime64):
-              h5_group.attrs[key] = np.string_(np.datetime_as_string(value, unit='us', timezone='UTC'))
-            else:
-              h5_group.attrs[key] = value
+          layer_replacements = {
+            'StartTime' : LAYER_START_TIME_KEY,
+            'EndTime' : LAYER_END_TIME_KEY
+          }
+
+          _write_tdms_properties(h5_group, tdmsFile.properties, layer_replacements)
+
+          part_replacements = {
+            'StartTime' : PART_START_TIME_KEY,
+            'EndTime' : PART_END_TIME_KEY
+          }
+
+          _write_tdms_properties(h5_group, group.properties, part_replacements)
           
           channel: nptdms.TdmsChannel
           for channel in group.channels():
