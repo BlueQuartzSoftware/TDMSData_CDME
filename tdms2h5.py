@@ -26,7 +26,7 @@ def _write_tdms_properties(h5_group: h5py.Group, tdms_dict: Dict[str, Any], repl
     if key in replacements:
       key = replacements[key]
     if isinstance(value, np.datetime64):
-      h5_group.attrs[key] = np.string_(np.datetime_as_string(value, unit='us', timezone='UTC'))
+      h5_group.attrs[key] = str(np.datetime_as_string(value, unit='us', timezone='UTC'))
     else:
       h5_group.attrs[key] = value
 
@@ -89,12 +89,15 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = 
     slice_indices = sorted(slice_indices)
 
     for h5_file in h5_files.values():
-      index_dataset = np.zeros((len(slice_indices), 3), dtype=int)
+      index_dataset = np.zeros((len(slice_indices), 3), dtype=np.int64)
       for i, index in enumerate(slice_indices):
         index_dataset[i][0] = index
         index_dataset[i][1] = h5_file[SLICES_KEY][str(index)].attrs['layerThickness']
         index_dataset[i][2] = h5_file[SLICES_KEY][str(index)]['X-Axis'].size
-      h5_file.create_dataset(INDEX_KEY, data=index_dataset)
+      dataset: h5py.Dataset = h5_file.create_dataset(INDEX_KEY, data=index_dataset)
+      dataset.attrs['Column0'] = 'SliceIndex'
+      dataset.attrs['Column1'] = 'LayerThickness'
+      dataset.attrs['Column2'] = 'NumVertices'
     
     if verbose:
       print('\nWrote files:')
