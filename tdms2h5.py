@@ -5,9 +5,8 @@ import numpy as np
 import re
 
 from contextlib import ExitStack
-from glob import glob
 from pathlib import Path
-from typing import Any, AnyStr, Dict, List, Match, Pattern
+from typing import Any, AnyStr, Dict, Generator, List, Match, Pattern
 
 FILE_VERSION: int = 2
 VERSION_KEY: str = 'Version'
@@ -20,23 +19,20 @@ PART_END_TIME_KEY: str = 'PartEndTime'
 TDMS_GROUP_NAME_KEY: str = 'TDMS_GroupName'
 VERTICES_KEY: str = 'Vertices'
 
-def tdms2h5(input_dir: str, output_dir: str, groups: List[str] = [], verbose: bool = False) -> None:
-  glob_pattern = Path(input_dir) / '*.tdms'
-  paths: List[str] = glob(str(glob_pattern))
-  regex_file: Pattern[AnyStr] = re.compile(r'Slice\d+.tdms$')
-  regex_name: Pattern[AnyStr] = re.compile(r'Slice(\d+)')
-  
+def tdms2h5(input_dir: str, output_dir: str, prefix: str, groups: List[str] = [], verbose: bool = False) -> None:
+  paths_generator: Generator[(Path, None, None)] = Path(input_dir).glob('*.[Tt][Dd][Mm][Ss]')
+  regex_name: Pattern[AnyStr] = re.compile(fr'{prefix}(\d+)')
+
   with ExitStack() as exitStack:
     h5_files: Dict[str, h5py.File] = {}
     slice_indices: List[int] = []
 
-    path: str
-    for path in filter(regex_file.search, paths):
+    path: Path
+    for path in filter(lambda item: regex_name.search(item.stem), paths_generator):
       if verbose:
         print(f'Converting \"{path}\"')
-      
-      input_file_path = Path(path)
-      match: Match[AnyStr] = regex_name.search(input_file_path.stem)
+
+      match: Match[AnyStr] = regex_name.search(path.stem)
       slice_index = int(match.group(1))
       slice_indices.append(slice_index)
       
@@ -98,13 +94,15 @@ def tdms2h5(input_dir: str, output_dir: str, groups: List[str] = [], verbose: bo
     
     if verbose:
       print('\nWrote files:')
-      for file_path in h5_files:
-        print(f'  \"{file_path}\"')
+      h5_file: h5py.File
+      for h5_file in h5_files.values():
+        print(f'  \"{h5_file.filename}\"')
 
 def main() -> None:
-  parser = argparse.ArgumentParser(description='Converts TDMS files to a HDF5 format. Input files must be named in the following regex format \"Slice\\d+.tdms\"')
+  parser = argparse.ArgumentParser(description='Converts TDMS files to a HDF5 format. Input files must be named in the following regex format \"[prefix]\\d+.tdms\"')
   parser.add_argument('input_dir', help='Input directory where .tdms files are located')
   parser.add_argument('output_dir', help='Output directory where .h5 files are generated')
+  parser.add_argument('prefix', help='Specifies the file prefix to search for as regex.')
   parser.add_argument('-g', '--groups', nargs='+', help='Specifies which TDMS groups should be converted')
   parser.add_argument('-v', '--verbose', action='store_true', help='Prints additional information while converting')
   args = parser.parse_args()
@@ -113,11 +111,12 @@ def main() -> None:
     print('args:')
     print(f'  input_dir = \"{args.input_dir}\"')
     print(f'  output_dir = \"{args.output_dir}\"')
+    print(f'  prefix = \"{args.prefix}\"')
     print(f'  groups = {args.groups}')
     print(f'  verbose = {args.verbose}')
     print('')
 
-  tdms2h5(args.input_dir, args.output_dir, args.groups, args.verbose)
+  tdms2h5(args.input_dir, args.output_dir, args.prefix, args.groups, args.verbose)
 
 if __name__ == '__main__':
   main()
