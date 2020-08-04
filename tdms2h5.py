@@ -88,13 +88,11 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = 
     slice_indices = sorted(slice_indices)
 
     for h5_file in h5_files.values():
-      total_vertices = 0
-      index_dataset = np.zeros((len(slice_indices), 2), dtype=int)
+      index_dataset = np.zeros((len(slice_indices), 3), dtype=int)
       for i, index in enumerate(slice_indices):
-        total_vertices += h5_file[SLICES_KEY][str(index)]['X-Axis'].size
         index_dataset[i][0] = index
         index_dataset[i][1] = h5_file[SLICES_KEY][str(index)].attrs['layerThickness']
-      h5_file[SLICES_KEY].attrs[VERTICES_KEY] = total_vertices
+        index_dataset[i][2] = h5_file[SLICES_KEY][str(index)]['X-Axis'].size
       h5_file.create_dataset(INDEX_KEY, data=index_dataset)
     
     if verbose:
