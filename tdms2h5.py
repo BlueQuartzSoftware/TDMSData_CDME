@@ -20,6 +20,12 @@ TDMS_GROUP_NAME_KEY: str = 'TDMS_GroupName'
 VERTICES_KEY: str = 'Vertices'
 
 def tdms2h5(input_dir: str, output_dir: str, prefix: str, groups: List[str] = [], verbose: bool = False) -> None:
+  output_dir_path = Path(output_dir)
+  if not output_dir_path.exists():
+    if verbose:
+      print(f'Creating directory \"{output_dir_path}\"')
+    output_dir_path.mkdir(parents=True)
+
   paths_generator: Generator[(Path, None, None)] = Path(input_dir).glob('*.[Tt][Dd][Mm][Ss]')
   regex_name: Pattern[AnyStr] = re.compile(fr'{prefix}(\d+)')
 
@@ -42,7 +48,7 @@ def tdms2h5(input_dir: str, output_dir: str, prefix: str, groups: List[str] = []
           if groups and group.name not in groups:
             continue
           
-          output_file_path = Path(output_dir) / f'{group.name}.h5'
+          output_file_path = output_dir_path / f'{group.name}.h5'
           if group.name not in h5_files:
             h5_files[group.name] = exitStack.enter_context(h5py.File(output_file_path, 'w'))
             h5_file = h5_files[group.name]
