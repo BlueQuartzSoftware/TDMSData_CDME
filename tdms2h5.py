@@ -84,6 +84,8 @@ def tdms2h5(input_dir: str, output_dir: str, groups: List[str] = [], verbose: bo
           for channel in group.channels():
             h5_group.create_dataset(channel.name, data=channel.data)
     
+    slice_indices = sorted(slice_indices)
+
     for h5_file in h5_files.values():
       total_vertices = 0
       index_dataset = np.zeros((len(slice_indices), 2), dtype=int)
