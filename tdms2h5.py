@@ -96,7 +96,7 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = 
         index_dataset[i][2] = h5_file[SLICES_KEY][str(index)]['X-Axis'].size
       dataset: h5py.Dataset = h5_file.create_dataset(INDEX_KEY, data=index_dataset)
       dataset.attrs['Column0'] = 'SliceIndex'
-      dataset.attrs['Column1'] = 'LayerThickness'
+      dataset.attrs['Column1'] = 'LayerThickness (μm)'
       dataset.attrs['Column2'] = 'NumVertices'
     
     if verbose:
