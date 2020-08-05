@@ -9,7 +9,7 @@ with open('requirements.txt') as file:
 
 setuptools.setup(
   name='tdms2h5',
-  version='0.1.0',
+  version='1.0.0',
   author='BlueQuartz Software, LLC',
   author_email='info@bluequartz.net',
   description='tdms2h5 is a Python package for converting TDMS files into HDF5 files',
