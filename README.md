@@ -31,11 +31,11 @@ All of the project was written with Python 3.8 in mind, but the most recent Pyth
 Anaconda also will work well for this.
 
 After installing Pip: open your command line (On windows, run cmd.exe. On Linux, you should know how to do that.)
-    Run the following to install some python libraries:
+Run the following to install some python libraries (h5py, numpy, nptdms):
 
-    pip install nptdms
-    pip install numpy
-    pip install h5py
+```
+pip install -r requirements.txt
+```
 
 These three libraries are required. If these don’t work because you don’t have admin permissions, install locally by appending the --user flag to the commands.
 
@@ -45,8 +45,12 @@ Locate the folder of tdms files you want to transform. If they’re in a zip fol
 
 Run the "tdms2h5.py” file in the root folder by right clicking & selecting “Run with IDLE”. Alternatively, start a command line, navigate to the folder with main.py, and run it in python with the commands python then Main.py.
 
+This module can also be installed locally via pip which will create a command line program "tdms2h5" that can be run from your chosen Python environment.
+
 ## Anaconda ##
 
-        [user] $ conda activate [virtual env name]
-        [user] $ conda install h5py numpy nptdms
-        [user] $ python tdms2h5.py [input_dir] [output_dir] Slice
+```
+[user] $ conda activate [virtual env name]
+[user] $ conda install h5py numpy nptdms
+[user] $ python tdms2h5.py [input_dir] [output_dir] Slice
+```
