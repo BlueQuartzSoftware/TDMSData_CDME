@@ -30,7 +30,12 @@ def _write_tdms_properties(h5_group: h5py.Group, tdms_dict: Dict[str, Any], repl
     else:
       h5_group.attrs[key] = value
 
-def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = [], verbose: bool = False) -> None:
+def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, offset: int, laser_delay: int, groups: List[str] = [], verbose: bool = False) -> None:
+  data_offset = int(offset / 25)
+  laser_offset = int((offset + laser_delay) / 25)
+
+  largest_offset = max(data_offset, laser_offset)
+
   if not output_dir.exists():
     if verbose:
       print(f'Creating directory \"{output_dir}\"')
@@ -51,13 +56,13 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = 
       match: Match[AnyStr] = regex_name.search(path.stem)
       slice_index = int(match.group(1))
       slice_indices.append(slice_index)
-      
+
       with nptdms.TdmsFile(path) as tdmsFile:
         group: nptdms.TdmsGroup
         for group in tdmsFile.groups():
           if groups and not any(re.match(pattern, group.name) for pattern in groups):
             continue
-          
+
           output_file_path = output_dir / f'{group.name}.h5'
           if group.name not in h5_files:
             h5_files[group.name] = exitStack.enter_context(h5py.File(output_file_path, 'w'))
@@ -81,11 +86,25 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = 
           }
 
           _write_tdms_properties(h5_group, group.properties, part_replacements)
-          
-          channel: nptdms.TdmsChannel
-          for channel in group.channels():
-            h5_group.create_dataset(channel.name, data=channel.data)
-    
+
+          laser_channel: nptdms.TdmsChannel = group['LaserTTL']
+          h5_group.create_dataset(laser_channel.name, laser_channel[largest_offset - 1:])
+
+          area_channel: nptdms.TdmsChannel = group['Area']
+          h5_group.create_dataset(area_channel.name, area_channel[largest_offset - 1:])
+
+          intensity_channel: nptdms.TdmsChannel = group['Intensity']
+          h5_group.create_dataset(intensity_channel.name, intensity_channel[largest_offset - 1:])
+
+          parameter_channel: nptdms.TdmsChannel = group['Parameter']
+          h5_group.create_dataset(parameter_channel.name, parameter_channel[largest_offset - 1:])
+
+          x_channel: nptdms.TdmsChannel = group['X-Axis']
+          h5_group.create_dataset(x_channel.name, x_channel[:-largest_offset])
+
+          y_channel: nptdms.TdmsChannel = group['Y-Axis']
+          h5_group.create_dataset(y_channel.name, y_channel[:-largest_offset])
+
     slice_indices = sorted(slice_indices)
 
     for h5_file in h5_files.values():
@@ -98,7 +117,7 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, groups: List[str] = 
       dataset.attrs['Column0'] = 'SliceIndex'
       dataset.attrs['Column1'] = 'LayerThickness (μm)'
       dataset.attrs['Column2'] = 'NumVertices'
-    
+
     if verbose:
       print('\nWrote files:')
       h5_file: h5py.File
@@ -112,6 +131,8 @@ def main() -> None:
   parser.add_argument('prefix', help='Specifies the file prefix to search for as regex.')
   parser.add_argument('-g', '--groups', nargs='+', help='Specifies which TDMS groups should be converted')
   parser.add_argument('-v', '--verbose', action='store_true', help='Prints additional information while converting')
+  parser.add_argument('-o', '--offset', type=int, default=0, help='Offset value (μs)')
+  parser.add_argument('-l', '--laser-delay', type=int, default=0, help='Laser delay value (μs)')
   args = parser.parse_args()
 
   if args.verbose:
@@ -121,9 +142,11 @@ def main() -> None:
     print(f'  prefix = \"{args.prefix}\"')
     print(f'  groups = {args.groups}')
     print(f'  verbose = {args.verbose}')
+    print(f'  offset = {args.offset}')
+    print(f'  laser-delay = {args.laser_delay}')
     print('')
 
-  tdms2h5(args.input_dir, args.output_dir, args.prefix, args.groups, args.verbose)
+  tdms2h5(args.input_dir, args.output_dir, args.prefix, args.offset, args.laser_delay, args.groups, args.verbose)
 
 if __name__ == '__main__':
   main()
