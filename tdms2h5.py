@@ -88,22 +88,22 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, offset: int, laser_d
           _write_tdms_properties(h5_group, group.properties, part_replacements)
 
           laser_channel: nptdms.TdmsChannel = group['LaserTTL']
-          h5_group.create_dataset(laser_channel.name, laser_channel[largest_offset - 1:])
+          h5_group.create_dataset(laser_channel.name, data=laser_channel[largest_offset - 1:])
 
           area_channel: nptdms.TdmsChannel = group['Area']
-          h5_group.create_dataset(area_channel.name, area_channel[largest_offset - 1:])
+          h5_group.create_dataset(area_channel.name, data=area_channel[largest_offset - 1:])
 
           intensity_channel: nptdms.TdmsChannel = group['Intensity']
-          h5_group.create_dataset(intensity_channel.name, intensity_channel[largest_offset - 1:])
+          h5_group.create_dataset(intensity_channel.name, data=intensity_channel[largest_offset - 1:])
 
           parameter_channel: nptdms.TdmsChannel = group['Parameter']
-          h5_group.create_dataset(parameter_channel.name, parameter_channel[largest_offset - 1:])
+          h5_group.create_dataset(parameter_channel.name, data=parameter_channel[largest_offset - 1:])
 
           x_channel: nptdms.TdmsChannel = group['X-Axis']
-          h5_group.create_dataset(x_channel.name, x_channel[:-largest_offset])
+          h5_group.create_dataset(x_channel.name, data=x_channel[:-largest_offset])
 
           y_channel: nptdms.TdmsChannel = group['Y-Axis']
-          h5_group.create_dataset(y_channel.name, y_channel[:-largest_offset])
+          h5_group.create_dataset(y_channel.name, data=y_channel[:-largest_offset])
 
     slice_indices = sorted(slice_indices)
 
