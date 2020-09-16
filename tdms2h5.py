@@ -30,10 +30,7 @@ def _write_tdms_properties(h5_group: h5py.Group, tdms_dict: Dict[str, Any], repl
     else:
       h5_group.attrs[key] = value
 
-def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, offset: int, laser_delay: int, groups: List[str] = [], verbose: bool = False) -> None:
-  data_offset = int(offset / 25)
-  laser_offset = int((offset + laser_delay) / 25)
-
+def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, data_offset: int, laser_offset: int, groups: List[str] = [], verbose: bool = False) -> None:
   largest_offset = max(data_offset, laser_offset)
 
   if not output_dir.exists():
@@ -143,8 +140,8 @@ def main() -> None:
   parser.add_argument('prefix', help='Specifies the file prefix to search for as regex.')
   parser.add_argument('-g', '--groups', nargs='+', help='Specifies which TDMS groups should be converted')
   parser.add_argument('-v', '--verbose', action='store_true', help='Prints additional information while converting')
-  parser.add_argument('-o', '--offset', type=int, default=0, help='Offset value (μs)')
-  parser.add_argument('-l', '--laser-delay', type=int, default=0, help='Laser delay value (μs)')
+  parser.add_argument('-d', '--data-offset', type=int, default=0, help='Data index offset')
+  parser.add_argument('-l', '--laser-offset', type=int, default=0, help='Laser index offset')
   args = parser.parse_args()
 
   if args.verbose:
@@ -154,11 +151,11 @@ def main() -> None:
     print(f'  prefix = \"{args.prefix}\"')
     print(f'  groups = {args.groups}')
     print(f'  verbose = {args.verbose}')
-    print(f'  offset = {args.offset}')
-    print(f'  laser-delay = {args.laser_delay}')
+    print(f'  offset = {args.data_offset}')
+    print(f'  laser-delay = {args.laser_offset}')
     print('')
 
-  tdms2h5(args.input_dir, args.output_dir, args.prefix, args.offset, args.laser_delay, args.groups, args.verbose)
+  tdms2h5(args.input_dir, args.output_dir, args.prefix, args.data_offset, args.laser_offset, args.groups, args.verbose)
 
 if __name__ == '__main__':
   main()
