@@ -77,32 +77,33 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, offset: int, laser_d
             'StartTime' : LAYER_START_TIME_KEY,
             'EndTime' : LAYER_END_TIME_KEY
           }
-
           _write_tdms_properties(h5_group, tdmsFile.properties, layer_replacements)
+
           part_replacements = {
             'StartTime' : PART_START_TIME_KEY,
             'EndTime' : PART_END_TIME_KEY
           }
-
           _write_tdms_properties(h5_group, group.properties, part_replacements)
-          # LaserTTL use only data_offset. The end has to be adjusted to make the resulting array consistent
-          laser_channel: nptdms.TdmsChannel = group['LaserTTL']
-          endindx = len(laser_channel) - (largest_offset - data_offset)
-          h5_group.create_dataset(laser_channel.name, data=laser_channel[data_offset : endindx])
 
-          # intensity and area use  LaserOffset 
+          # LaserTTL only uses data_offset. The end has to be adjusted to make the resulting array consistent
+          laser_channel: nptdms.TdmsChannel = group['LaserTTL']
+          laser_end_index: int = len(laser_channel) - (largest_offset - data_offset)
+          h5_group.create_dataset(laser_channel.name, data=laser_channel[data_offset : laser_end_index])
+
+          # Intensity and Area use laser_offset
           area_channel: nptdms.TdmsChannel = group['Area']
-          endindx = len(area_channel) - (largest_offset - laser_offset) #at this point for illustrative purposes since the Laser offset is always the largest
-          h5_group.create_dataset(area_channel.name, data=area_channel[laser_offset: endindx])
+          # At this point for illustrative purposes, since the laser_offset is always the largest
+          end_index: int = len(area_channel) - (largest_offset - laser_offset)
+          h5_group.create_dataset(area_channel.name, data=area_channel[laser_offset : end_index])
 
           intensity_channel: nptdms.TdmsChannel = group['Intensity']
-          h5_group.create_dataset(intensity_channel.name, data=intensity_channel[laser_offset: endindx])
-         
+          h5_group.create_dataset(intensity_channel.name, data=intensity_channel[laser_offset : end_index])
+
           # Have not figured out how to correlate parameter to the actual parameter used, just use the same as Laser TTL since it is a machine setting
           parameter_channel: nptdms.TdmsChannel = group['Parameter']
-          h5_group.create_dataset(parameter_channel.name, data=parameter_channel[data_offset: endindx])
+          h5_group.create_dataset(parameter_channel.name, data=parameter_channel[data_offset : end_index])
 
-          # X and y channels just adjust the maximum        
+          # X and Y channels just adjust the maximum
           x_channel: nptdms.TdmsChannel = group['X-Axis']
           h5_group.create_dataset(x_channel.name, data=x_channel[:-largest_offset])
 
