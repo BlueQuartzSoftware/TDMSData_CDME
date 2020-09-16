@@ -58,6 +58,9 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, offset: int, laser_d
       slice_indices.append(slice_index)
 
       with nptdms.TdmsFile(path) as tdmsFile:
+        bitgain_os_1: float = tdmsFile.properties['Bitgain OS 1']
+        bitgain_os_2: float = tdmsFile.properties['Bitgain OS 2']
+
         group: nptdms.TdmsGroup
         for group in tdmsFile.groups():
           if groups and not any(re.match(pattern, group.name) for pattern in groups):
@@ -105,10 +108,12 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, offset: int, laser_d
 
           # X and Y channels just adjust the maximum
           x_channel: nptdms.TdmsChannel = group['X-Axis']
-          h5_group.create_dataset(x_channel.name, data=x_channel[:-largest_offset])
+          x_dataset = h5_group.create_dataset(x_channel.name, data=(x_channel[:-largest_offset] / bitgain_os_1))
+          x_dataset.attrs['Units'] = 'μm'
 
           y_channel: nptdms.TdmsChannel = group['Y-Axis']
-          h5_group.create_dataset(y_channel.name, data=y_channel[:-largest_offset])
+          y_dataset = h5_group.create_dataset(y_channel.name, data=(y_channel[:-largest_offset] / bitgain_os_2))
+          y_dataset.attrs['Units'] = 'μm'
 
           # Resulting slices will be aligned with the same number of data points for each channel
 
