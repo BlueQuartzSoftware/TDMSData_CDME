@@ -105,11 +105,11 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, data_offset: int, la
 
           # X and Y channels just adjust the maximum
           x_channel: nptdms.TdmsChannel = group['X-Axis']
-          x_dataset = h5_group.create_dataset(x_channel.name, data=(x_channel[:-largest_offset] / bitgain_os_1))
+          x_dataset = h5_group.create_dataset(x_channel.name, data=(x_channel[:-largest_offset] / bitgain_os_1), dtype=np.float32)
           x_dataset.attrs['Units'] = 'μm'
 
           y_channel: nptdms.TdmsChannel = group['Y-Axis']
-          y_dataset = h5_group.create_dataset(y_channel.name, data=(y_channel[:-largest_offset] / bitgain_os_2))
+          y_dataset = h5_group.create_dataset(y_channel.name, data=(y_channel[:-largest_offset] / bitgain_os_2), dtype=np.float32)
           y_dataset.attrs['Units'] = 'μm'
 
           # Resulting slices will be aligned with the same number of data points for each channel
