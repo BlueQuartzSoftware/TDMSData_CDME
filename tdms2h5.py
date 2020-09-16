@@ -8,7 +8,7 @@ from contextlib import ExitStack
 from pathlib import Path
 from typing import Any, AnyStr, Dict, Generator, List, Match, Pattern
 
-FILE_VERSION: int = 2
+FILE_VERSION: int = 3
 VERSION_KEY: str = 'Version'
 SLICES_KEY: str = 'TDMSData'
 INDEX_KEY: str = 'Index'
