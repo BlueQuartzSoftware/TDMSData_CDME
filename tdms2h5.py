@@ -30,8 +30,8 @@ def _write_tdms_properties(h5_group: h5py.Group, tdms_dict: Dict[str, Any], repl
     else:
       h5_group.attrs[key] = value
 
-def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, data_offset: int, laser_offset: int, groups: List[str] = [], verbose: bool = False) -> None:
-  largest_offset = max(data_offset, laser_offset)
+def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, area_offset: int, intensity_offset: int, laser_offset: int, groups: List[str] = [], verbose: bool = False) -> None:
+  largest_offset = max(area_offset, intensity_offset)
 
   if not output_dir.exists():
     if verbose:
@@ -85,31 +85,32 @@ def tdms2h5(input_dir: Path, output_dir: Path, prefix: str, data_offset: int, la
           }
           _write_tdms_properties(h5_group, group.properties, part_replacements)
 
-          # LaserTTL only uses data_offset. The end has to be adjusted to make the resulting array consistent
+          # LaserTTL only uses laser_offset. The end has to be adjusted to make the resulting array consistent
           laser_channel: nptdms.TdmsChannel = group['LaserTTL']
-          laser_end_index: int = len(laser_channel) - (largest_offset - data_offset)
-          h5_group.create_dataset(laser_channel.name, data=laser_channel[data_offset : laser_end_index])
+          laser_end_index: int = len(laser_channel) - (laser_offset)
+          h5_group.create_dataset(laser_channel.name, data=laser_channel[laser_offset : laser_end_index])
 
           # Intensity and Area use laser_offset
           area_channel: nptdms.TdmsChannel = group['Area']
           # At this point for illustrative purposes, since the laser_offset is always the largest
-          end_index: int = len(area_channel) - (largest_offset - laser_offset)
-          h5_group.create_dataset(area_channel.name, data=area_channel[laser_offset : end_index])
+          end_index: int = len(area_channel) - (area_offset)
+          h5_group.create_dataset(area_channel.name, data=area_channel[area_offset : end_index])
 
           intensity_channel: nptdms.TdmsChannel = group['Intensity']
-          h5_group.create_dataset(intensity_channel.name, data=intensity_channel[laser_offset : end_index])
+          end_index: int = len(intensity_channel) - (intensity_offset)          
+          h5_group.create_dataset(intensity_channel.name, data=intensity_channel[intensity_offset : end_index])
 
           # Have not figured out how to correlate parameter to the actual parameter used, just use the same as Laser TTL since it is a machine setting
           parameter_channel: nptdms.TdmsChannel = group['Parameter']
-          h5_group.create_dataset(parameter_channel.name, data=parameter_channel[data_offset : end_index])
+          h5_group.create_dataset(parameter_channel.name, data=parameter_channel[:])
 
           # X and Y channels just adjust the maximum
           x_channel: nptdms.TdmsChannel = group['X-Axis']
-          x_dataset = h5_group.create_dataset(x_channel.name, data=(x_channel[:-largest_offset] / bitgain_os_1), dtype=np.float32)
+          x_dataset = h5_group.create_dataset(x_channel.name, data=(x_channel[:] / bitgain_os_1), dtype=np.float32)
           x_dataset.attrs['Units'] = 'μm'
 
           y_channel: nptdms.TdmsChannel = group['Y-Axis']
-          y_dataset = h5_group.create_dataset(y_channel.name, data=(y_channel[:-largest_offset] / bitgain_os_2), dtype=np.float32)
+          y_dataset = h5_group.create_dataset(y_channel.name, data=(y_channel[:] / bitgain_os_2), dtype=np.float32)
           y_dataset.attrs['Units'] = 'μm'
 
           # Resulting slices will be aligned with the same number of data points for each channel
@@ -140,7 +141,8 @@ def main() -> None:
   parser.add_argument('prefix', help='Specifies the file prefix to search for as regex.')
   parser.add_argument('-g', '--groups', nargs='+', help='Specifies which TDMS groups should be converted')
   parser.add_argument('-v', '--verbose', action='store_true', help='Prints additional information while converting')
-  parser.add_argument('-d', '--data-offset', type=int, default=0, help='Data index offset')
+  parser.add_argument('-a', '--area-offset', type=int, default=0, help='Area index offset (CamOffset)')
+  parser.add_argument('-i', '--intensity-offset', type=int, default=0, help='Intensity index offset (PhdOffset)')
   parser.add_argument('-l', '--laser-offset', type=int, default=0, help='Laser index offset')
   args = parser.parse_args()
 
@@ -151,11 +153,12 @@ def main() -> None:
     print(f'  prefix = \"{args.prefix}\"')
     print(f'  groups = {args.groups}')
     print(f'  verbose = {args.verbose}')
-    print(f'  offset = {args.data_offset}')
-    print(f'  laser-delay = {args.laser_offset}')
+    print(f'  area-offset = {args.area_offset}')
+    print(f'  intensity-offset = {args.intensity_offset}')
+    print(f'  laser-offset = {args.laser_offset}')
     print('')
 
-  tdms2h5(args.input_dir, args.output_dir, args.prefix, args.data_offset, args.laser_offset, args.groups, args.verbose)
+  tdms2h5(args.input_dir, args.output_dir, args.prefix, args.area_offset, args.intensity_offset, args.laser_offset, args.groups, args.verbose)
 
 if __name__ == '__main__':
   main()
