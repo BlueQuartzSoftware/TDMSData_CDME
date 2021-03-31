@@ -52,5 +52,5 @@ This module can also be installed locally via pip which will create a command li
 ```
 [user] $ conda activate [virtual env name]
 [user] $ conda install h5py numpy nptdms
-[user] $ python tdms2h5.py [input_dir] [output_dir] Slice
+[user@host] $ python tdms2h5.py -v -a 19 -i 14 -l 11 "/Users/Shared/Data/tdms_data/QMMeltPool_Data/Test_Files/" "/tmp/Converted/" Slice00
 ```
